@@ -11,15 +11,18 @@ import (
 
 type job func(in, out chan interface{})
 
+// MaxInputDataLen -
 const (
 	MaxInputDataLen = 100
 )
 
 var (
-	dataSignerOverheat uint32 = 0
-	DataSignerSalt            = ""
+	dataSignerOverheat uint32
+	// DataSignerSalt -
+	DataSignerSalt = ""
 )
 
+// OverheatLock -
 var OverheatLock = func() {
 	for {
 		if swapped := atomic.CompareAndSwapUint32(&dataSignerOverheat, 0, 1); !swapped {
@@ -31,6 +34,7 @@ var OverheatLock = func() {
 	}
 }
 
+// OverheatUnlock -
 var OverheatUnlock = func() {
 	for {
 		if swapped := atomic.CompareAndSwapUint32(&dataSignerOverheat, 1, 0); !swapped {
@@ -42,6 +46,7 @@ var OverheatUnlock = func() {
 	}
 }
 
+// DataSignerMd5 -
 var DataSignerMd5 = func(data string) string {
 	OverheatLock()
 	defer OverheatUnlock()
@@ -51,6 +56,7 @@ var DataSignerMd5 = func(data string) string {
 	return dataHash
 }
 
+// DataSignerCrc32 -
 var DataSignerCrc32 = func(data string) string {
 	data += DataSignerSalt
 	crcH := crc32.ChecksumIEEE([]byte(data))

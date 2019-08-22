@@ -34,7 +34,7 @@ func TestPipeline(t *testing.T) {
 			}
 		}),
 		job(func(in, out chan interface{}) {
-			for _ = range in {
+			for range in {
 				atomic.AddUint32(&recieved, 1)
 			}
 		}),
@@ -54,7 +54,7 @@ func TestSigner(t *testing.T) {
 	// я преопределяю фукции на свои которые инкрементят локальный счетчик
 	// переопределение возможо потому что я объявил функцию как переменную, в которой лежит функция
 	var (
-		DataSignerSalt         string = "" // на сервере будет другое значение
+		DataSignerSalt         string // на сервере будет другое значение
 		OverheatLockCounter    uint32
 		OverheatUnlockCounter  uint32
 		DataSignerMd5Counter   uint32
