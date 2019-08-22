@@ -18,85 +18,60 @@ func dirTreeWithOffset(
 	if err != nil {
 		return err
 	}
-	dirs := make([]os.FileInfo, 0)
-	files := make([]os.FileInfo, 0)
-	for _, entry := range entries {
-		if entry.IsDir() {
-			dirs = append(dirs, entry)
-		} else {
-			files = append(files, entry)
+
+	var dirCount int
+	for _, entryInfo := range entries {
+		if entryInfo.IsDir() {
+			dirCount++
 		}
 	}
 
-	if printFiles && len(prefixes) > 0 {
-		for i, fileInfo := range files {
-			for _, prefix := range prefixes {
-				fmt.Fprint(out, prefix)
-			}
-			last := len(dirs) == 0 && len(files) == i+1
-			if last {
-				fmt.Fprint(out, "└───")
-			} else {
-				fmt.Fprint(out, "├───")
-			}
-			var size string
-			if fileInfo.Size() == 0 {
-				size = "empty"
-			} else {
-				size = fmt.Sprintf("%db", fileInfo.Size())
-			}
-			fmt.Fprintf(out, "%s (%s)\n", fileInfo.Name(), size)
+	var dirCursor int
+	for i, entryInfo := range entries {
+		isDir := entryInfo.IsDir()
+		if isDir {
+			dirCursor++
+		} else if !printFiles {
+			continue
 		}
-	}
 
-	for i, dirInfo := range dirs {
 		for _, prefix := range prefixes {
 			fmt.Fprint(out, prefix)
 		}
+
 		var last bool
-		if len(prefixes) > 0 {
-			last = len(dirs) == i+1
+		if printFiles {
+			last = len(entries) == i+1
 		} else {
-			if printFiles {
-				last = len(files) == 0 && len(dirs) == i+1
-			} else {
-				last = len(dirs) == i+1
-			}
+			last = dirCount == dirCursor
 		}
 		if last {
 			fmt.Fprint(out, "└───")
 		} else {
 			fmt.Fprint(out, "├───")
 		}
-		fmt.Fprintf(out, "%s\n", dirInfo.Name())
 
-		var nestedPrefixes []string
-		if last {
-			nestedPrefixes = append(prefixes, "\t")
+		if isDir {
+			fmt.Fprintf(out, "%s\n", entryInfo.Name())
 		} else {
-			nestedPrefixes = append(prefixes, "│\t")
-		}
-		nestedPath := filepath.Join(path, dirInfo.Name())
-		err = dirTreeWithOffset(out, nestedPath, printFiles, nestedPrefixes)
-	}
-
-	if printFiles && len(prefixes) == 0 {
-		for i, fileInfo := range files {
-			for _, prefix := range prefixes {
-				fmt.Fprint(out, prefix)
-			}
-			if len(files) == i+1 {
-				fmt.Fprint(out, "└───")
-			} else {
-				fmt.Fprint(out, "├───")
-			}
 			var size string
-			if fileInfo.Size() == 0 {
+			if entryInfo.Size() == 0 {
 				size = "empty"
 			} else {
-				size = fmt.Sprintf("%db", fileInfo.Size())
+				size = fmt.Sprintf("%db", entryInfo.Size())
 			}
-			fmt.Fprintf(out, "%s (%s)\n", fileInfo.Name(), size)
+			fmt.Fprintf(out, "%s (%s)\n", entryInfo.Name(), size)
+		}
+
+		if entryInfo.IsDir() {
+			var nestedPrefixes []string
+			if last {
+				nestedPrefixes = append(prefixes, "\t")
+			} else {
+				nestedPrefixes = append(prefixes, "│\t")
+			}
+			nestedPath := filepath.Join(path, entryInfo.Name())
+			err = dirTreeWithOffset(out, nestedPath, printFiles, nestedPrefixes)
 		}
 	}
 
